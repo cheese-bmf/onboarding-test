@@ -9,7 +9,7 @@
 
 | ID | 관문 | 지금 왜 막히나 | 사용자에게 주는 마찰 | TO-BE 개선 방향 | M 후보 |
 |---|---|---|---|---|---|
-| **G1** | `PARTNERS_TOKEN` 발급 | SDK가 GitHub Packages 사설 레지스트리에 있어 설치에 `read:packages` PAT가 필요. 사람이 발급 + org SSO Authorize | 첫 명령(init)부터 막힘. 벤치마크의 "계정 없으면 init 불가"(마찰 #1)와 동형 | ① 공개 npm 스코프 배포로 토큰 자체 제거, 또는 ② 토큰 없이 도는 제로설치 플레이그라운드/템플릿, 또는 ③ `bstage login` 디바이스 플로우로 PAT 수동 발급 대체 | M1/M2 |
+| **G1** | `PARTNERS_TOKEN`(classic PAT) 발급 + 레지스트리 `.npmrc` 사전설정 | SDK가 npmjs가 아니라 GitHub Packages(`npm.pkg.github.com`) 사설 스코프에 있음. ① classic PAT(`read:packages`) 사람 발급 + `partners-bmf` SSO Authorize, ② **CLI를 가져오는 `npx` 전에 `@partners-bmf:registry` `.npmrc`를 손으로 걸어야 함**(안 하면 npx가 npmjs에서 찾다 404/401) | 첫 명령(init)부터 막힘. 실제로 cheese ⑥ 검증에서 npm registry 오류로 걸림. 벤치마크의 "계정 없으면 init 불가"(마찰 #1)와 동형 | ① 공개 npm 스코프 배포로 토큰·레지스트리 설정 자체 제거, 또는 ② 토큰 없이 도는 제로설치 플레이그라운드/템플릿, 또는 ③ `bstage login` 디바이스 플로우 + **레지스트리 `.npmrc`를 깔아주는 부트스트랩(예: `npx bstage-bootstrap` 또는 원라이너)** 으로 수동 `.npmrc` 편집 제거 | M1/M2 |
 | **G2** | API 키(`appId`/`appSecret`) | 인증 API 호출에 필요. 파트너 콘솔에서 개별 발급. `bsa_`/`bsp_` 혼동이 잦음 | 화면 커스텀은 되는데 데이터 붙일 때 막힘. 키 뒤바꿈 → 인증 에러 삽질 | 스캐폴드가 키 슬롯을 라벨(appId=bsa_, appSecret=bsp_)과 함께 생성 + `doctor`가 키 형식 검증. connect 단계로 지연 | M2 |
 | **G3** | GitHub 조직 접근(flex 기안) | 배포 리포가 사설 조직(`partners-bmf` 등)에 있어 멤버십 필요. 승인 리드타임 있음 | 권한 없으면 리포 링크가 GitHub 404. 승인 대기로 착수 지연 | 승인 큐를 포털 창구 하나로 + 상태 가시화. 샌드박스 리포는 사전 프로비저닝 | M1/M3 |
 | **G4** | b.stage Console 커스텀 활성화 | **내부 제품이라 외부에서 구조적으로 못 켠다.** 안 켜면 배포 성공해도 404, 켜졌는지 확인 수단도 없음 | 대표 지뢰 1번. "성공했는데 404"의 원인이 안 보임 | 포털에서 활성화 상태를 조회·요청 가능하게 노출(외부가 직접 못 켜도 상태는 봐야) + 배포 전 체크. 근본은 포털-콘솔 통합 | M1~M3 |

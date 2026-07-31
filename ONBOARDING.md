@@ -55,34 +55,47 @@ git --version
 
 목표: b.stage **계정·스테이지 없이**(단, 아래 G1의 `PARTNERS_TOKEN`은 필요) 프로젝트를 만들고 로컬 개발 서버에 첫 화면을 띄운다.
 
-### ⛔ WAITING G1 — PARTNERS_TOKEN
+### ⛔ WAITING G1 — PARTNERS_TOKEN (classic PAT)
 
-SDK 패키지(`@partners-bmf/*`)는 GitHub Packages 사설 레지스트리에 있어서, 설치하려면 `read:packages` 권한의 Personal Access Token이 필요하다. **이 토큰은 사람이 발급받아야 한다(자동화 불가).**
+SDK 패키지(`@partners-bmf/*`)는 npmjs가 아니라 **GitHub Packages(`https://npm.pkg.github.com`) 사설 레지스트리**에 있다. 그래서 **CLI를 가져오는 `npx @partners-bmf/bstage-cli` 자체가 인증·레지스트리 설정 전에는 실패**한다(npm이 기본 레지스트리 npmjs에서 찾다 404/401). 이 토큰은 **사람이 발급받아야 한다(자동화 불가).**
 
-- **무엇을**: `PARTNERS_TOKEN` (GitHub PAT, scope `read:packages`, 생성 후 org에 **SSO Authorize**까지 눌러야 함)
-- **어디서**: b.stage 파트너 담당자 / 내부 발급 경로
-- **왜**: 이게 없으면 `bstage init`의 의존성 설치가 GitHub Packages 401/403으로 실패한다
-- **재개 방법**: 토큰을 받은 뒤
-  ```bash
-  export PARTNERS_TOKEN=ghp_xxxx
-  ```
-  를 실행하고 이 단계부터 다시 진행
+- **무엇을**: `PARTNERS_TOKEN` = GitHub **classic** PAT, scope 최소 `read:packages`
+  - ⚠️ **Fine-grained PAT는 GitHub Packages를 아직 지원 안 함 → 반드시 classic 토큰**
+  - 생성 후 토큰 목록에서 **Configure SSO → `partners-bmf` 조직 Authorize**까지 눌러야 함. 안 하면 private 패키지가 404/401
+- **어디서**: GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic). 발급 경로 문의는 b.stage 파트너 담당자
+- **왜**: 없으면 CLI를 받는 `npx`도, 프로젝트 의존성 설치도 GitHub Packages 401/404로 실패
+- **재개 방법**: 토큰을 받은 뒤 `export PARTNERS_TOKEN=ghp_xxxx` 하고, 아래 "레지스트리 설정" 단계부터 진행
 
 > 존재 여부만 안전하게 확인한다(값을 출력하거나 로그에 남기지 말 것):
 > ```bash
 > [ -n "$PARTNERS_TOKEN" ] && echo "PARTNERS_TOKEN: set" || echo "PARTNERS_TOKEN: missing -> WAITING"
 > ```
 > `missing`이면 `status: waiting`으로 멈춘다.
-> (이 관문은 TO-BE 개선 대상이다 — TOBE.md G1 참조.)
+> (이 관문 + 아래 레지스트리 수동 설정은 TO-BE 개선 대상이다 — TOBE.md G1 참조.)
+
+### 실행 — 레지스트리 설정 (`.npmrc`) · `npx` 전에 반드시
+
+`@partners-bmf` 스코프를 GitHub Packages로 매핑해야 CLI를 가져올 수 있다. **프로젝트를 만들 상위 디렉터리(지금 `npx`를 실행할 곳)에 `.npmrc`를 먼저 만든다.**
+
+```bash
+cat > .npmrc <<'NPMRC'
+@partners-bmf:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${PARTNERS_TOKEN}
+//npm.pkg.github.com/:always-auth=true
+NPMRC
+```
+- `${PARTNERS_TOKEN}`은 npm이 실행 시 환경변수에서 읽는다. **토큰 원문을 `.npmrc`에 직접 쓰지 말 것.**
+- 어드민 계보(`@frontend-bmf`)까지 쓸 거면 같은 방식으로 `@frontend-bmf:registry=...` 한 줄을 추가. SDK_FULL 유저 템플릿만이면 위 세 줄로 충분.
+- **검증**: `npm view @partners-bmf/bstage-cli version` 이 401/404 없이 버전을 출력하면 통과. 실패하면 G1(토큰·SSO·classic 여부)로 돌아간다.
 
 ### 실행 — 프로젝트 생성
 ```bash
 npx @partners-bmf/bstage-cli@latest init --yes --space <space>
 # <space>: 프로젝트 식별자. 대상 스테이지가 정해지지 않았으면 임시로 demo 사용
-# 예) --space demo  →  생성 폴더명은 bstage-demo-templates/
 ```
 - 인터랙티브로 물으면(비TTY 실패 시) `--yes --space <space>`로 비대화형 실행. API 키는 **"없어도 시작"** 을 선택(나중 connect 단계에서 설정).
-- 완료되면 **`bstage-<space>-templates/`** 폴더(위 예시면 `bstage-demo-templates/`)에 의존성 설치·git 초기화·보일러플레이트가 생성된다. 아래 검증 단계의 `cd bstage-<space>-templates`가 이 폴더다.
+- 완료되면 새 폴더에 의존성 설치·git 초기화·보일러플레이트가 생성된다.
+  > ⚠️ **폴더명을 넘겨짚지 말 것.** SDK 문서 버전에 따라 `bstage-<space>-templates/` 또는 `<space>-custom-templates-<phase>/`로 다르다. init 출력에 찍힌 실제 폴더명을 확인하거나 `ls -d */`로 새로 생긴 디렉터리를 찾아 그리로 `cd` 한다.
 
 ### 실행 — 템플릿 작성 (SDK_FULL 풀페이지)
 `src/templates/<name>/template.tsx` 를 만든다. **파일명은 반드시 `template.tsx`**.
@@ -102,7 +115,7 @@ createTemplate(DemoTemplate, {
 
 ### 검증 — 로컬 성공 신호
 ```bash
-cd bstage-<space>-templates
+cd <init이 생성한 폴더>   # 위에서 확인한 실제 폴더명
 npm run dev
 ```
 - `http://localhost:5173` → 템플릿 목록, `http://localhost:5173/<name>` → 컴포넌트 렌더 확인.
