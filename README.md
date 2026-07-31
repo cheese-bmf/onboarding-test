@@ -9,7 +9,7 @@ b.stage SaaS의 한 URL을 **커스텀 풀페이지(SDK_FULL)** 로 갈아 끼�
 아래 한 줄을 복사해 Claude Code(또는 URL을 읽을 수 있는 AI 코딩 툴)에 붙여넣으세요.
 
 ```
-https://raw.githubusercontent.com/cheese-bmf/onboarding-test/main/ONBOARDING.md 를 읽고 그대로 온보딩을 진행해줘. 각 단계에서 감지→검증→실행→재검증하고, 실패하면 원문 오류를 그대로 알려주고 멈춰. 사람이 처리해야 하는 관문(WAITING)에서는 자동으로 넘기지 말고 무엇을·어디서·왜 받아야 하는지와 재개 방법을 알려줘.
+https://raw.githubusercontent.com/cheese-bmf/onboarding-test/main/ONBOARDING.md 를 읽고 그대로 온보딩을 진행해줘. (문서를 요약하지 말고 원문 그대로 읽어 — 명령·코드블록이 그대로 있어야 해. 코드블록이 사라졌으면 `curl`로 raw를 다시 가져와.) 각 단계에서 감지→검증→실행→재검증하고, 실패하면 원문 오류를 그대로 알려주고 멈춰. 사람이 처리해야 하는 관문(WAITING)에서는 자동으로 넘기지 말고 무엇을·어디서·왜 받아야 하는지와 재개 방법을 알려줘.
 ```
 
 에이전트가 위 URL의 지시서(runbook)를 읽고 환경 진단 → 스캐폴드 → 로컬 서버 기동까지 알아서 진행하고, b.stage 자격증명·조직 승인·콘솔 활성화가 필요한 지점에서 멈춰 안내합니다.

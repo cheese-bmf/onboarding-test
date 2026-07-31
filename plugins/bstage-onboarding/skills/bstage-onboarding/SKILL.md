@@ -9,8 +9,11 @@ description: Use when the user wants to start a b.stage custom page/app (SDK_FUL
 
 ## 수행 절차
 
-1. 아래 정본 runbook을 가져온다(WebFetch 또는 사용자 도구로):
-   `https://raw.githubusercontent.com/cheese-bmf/onboarding-test/main/ONBOARDING.md`
+1. 아래 정본 runbook을 **원문 그대로**(요약 없이) 가져온다. 요약 프록시는 코드블록·명령을 접으므로, 가능하면 `curl`로 raw를 받는다:
+   ```bash
+   curl -s https://raw.githubusercontent.com/cheese-bmf/onboarding-test/main/ONBOARDING.md
+   ```
+   (WebFetch만 쓸 수 있고 명령이 요약돼 사라졌으면, 사용자에게 원문을 붙여 달라고 요청한다.)
 2. 그 문서의 지시를 **그대로** 따른다:
    - 각 단계를 **감지 → 검증 → 실행 → 재검증** 순으로 처리
    - 실패하면 **추측하지 말고 원문 오류를 보고한 뒤 멈춘다**

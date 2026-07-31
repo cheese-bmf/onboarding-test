@@ -5,10 +5,17 @@
 > 실패하면 **추측하지 말고 원문 오류를 그대로 보고한 뒤 멈춘다.**
 > 사람이 처리해야만 하는 관문(자격증명 발급·조직 승인·내부 콘솔)은 **WAITING**으로 표시돼 있다.
 > WAITING을 만나면 자동으로 넘기려 하지 말고, "무엇을 · 어디서 · 왜 받아야 하는지 + 받은 뒤 재개하는 방법"을 사용자에게 안내하고 멈춘다.
+>
+> ⚠️ **이 문서를 요약해서 읽지 마라.** 명령·코드블록이 그대로 있어야 수행할 수 있다. 요약 프록시(일부 WebFetch)가 코드블록을 접었다면 raw 원문을 다시 확보하라:
+> `curl -s https://raw.githubusercontent.com/cheese-bmf/onboarding-test/main/ONBOARDING.md`
 
 ## 이 온보딩이 만드는 것
 
-b.stage SaaS의 특정 URL을 **커스텀 풀페이지(SDK_FULL)** 로 갈아 끼우는 3rd-party 템플릿 프로젝트. React 컴포넌트를 Web Component(IIFE 번들)로 빌드해 b.stage에 배포한다. 이 runbook은 **로컬에서 돌아가는 상태까지는 자동으로** 끌고 가고, b.stage 계정·조직·콘솔이 필요한 배포 단계는 명시적 WAITING으로 멈춘다.
+b.stage SaaS의 특정 URL을 **커스텀 풀페이지(SDK_FULL)** 로 갈아 끼우는 3rd-party 템플릿 프로젝트. React 컴포넌트를 Web Component(IIFE 번들)로 빌드해 b.stage에 배포한다.
+
+이 runbook의 도달 지점을 정직하게 밝힌다:
+- **로컬까지(Phase 0~1)**: b.stage **계정·스테이지·조직·콘솔은 필요 없다.** 단 하나, SDK 설치용 **`PARTNERS_TOKEN`(사람이 발급하는 GitHub PAT)** 은 필요하다 — 이게 Phase 1의 유일한 사람 관문(G1)이고, 토큰만 있으면 스캐폴드·빌드·로컬 렌더까지 자동으로 간다.
+- **배포까지(Phase 2)**: b.stage API 키·조직 접근·Console 활성화가 필요하며, 각각 명시적 WAITING으로 멈춘다.
 
 ## 단계 표기 규약
 
@@ -38,13 +45,15 @@ git --version
 ```
 
 - Node가 20 미만 → `status: failed`. 사용자에게 Node 20+ 설치를 안내하고 멈춘다.
-- 위가 모두 되면 `status: ok` → Phase 1로.
+- 위가 모두 되면 `status: ok`.
+
+**사전 준비물 체크 (Phase 1 진입 전):** Phase 1은 계정·스테이지 없이 되지만 **`PARTNERS_TOKEN` 하나는 반드시 필요**하다. 지금 없으면 아래 G1이 곧 WAITING이 되니, 먼저 발급 요청을 걸어두는 걸 권한다.
 
 ---
 
 ## Phase 1 — init (로컬 스캐폴드 + 로컬 렌더까지)
 
-목표: **b.stage 계정 없이** 프로젝트를 만들고 로컬 개발 서버에 첫 화면을 띄운다.
+목표: b.stage **계정·스테이지 없이**(단, 아래 G1의 `PARTNERS_TOKEN`은 필요) 프로젝트를 만들고 로컬 개발 서버에 첫 화면을 띄운다.
 
 ### ⛔ WAITING G1 — PARTNERS_TOKEN
 
@@ -59,16 +68,21 @@ SDK 패키지(`@partners-bmf/*`)는 GitHub Packages 사설 레지스트리에 �
   ```
   를 실행하고 이 단계부터 다시 진행
 
-> `echo "$PARTNERS_TOKEN"`이 비어 있으면 `status: waiting`. 토큰을 출력하거나 로그에 남기지 말 것. 존재 여부만 확인한다.
+> 존재 여부만 안전하게 확인한다(값을 출력하거나 로그에 남기지 말 것):
+> ```bash
+> [ -n "$PARTNERS_TOKEN" ] && echo "PARTNERS_TOKEN: set" || echo "PARTNERS_TOKEN: missing -> WAITING"
+> ```
+> `missing`이면 `status: waiting`으로 멈춘다.
 > (이 관문은 TO-BE 개선 대상이다 — TOBE.md G1 참조.)
 
 ### 실행 — 프로젝트 생성
 ```bash
 npx @partners-bmf/bstage-cli@latest init --yes --space <space>
 # <space>: 프로젝트 식별자. 대상 스테이지가 정해지지 않았으면 임시로 demo 사용
+# 예) --space demo  →  생성 폴더명은 bstage-demo-templates/
 ```
 - 인터랙티브로 물으면(비TTY 실패 시) `--yes --space <space>`로 비대화형 실행. API 키는 **"없어도 시작"** 을 선택(나중 connect 단계에서 설정).
-- 완료되면 `bstage-<space>-templates/` 폴더에 의존성 설치·git 초기화·보일러플레이트가 생성된다.
+- 완료되면 **`bstage-<space>-templates/`** 폴더(위 예시면 `bstage-demo-templates/`)에 의존성 설치·git 초기화·보일러플레이트가 생성된다. 아래 검증 단계의 `cd bstage-<space>-templates`가 이 폴더다.
 
 ### 실행 — 템플릿 작성 (SDK_FULL 풀페이지)
 `src/templates/<name>/template.tsx` 를 만든다. **파일명은 반드시 `template.tsx`**.
@@ -153,7 +167,7 @@ git tag v1.0.0 && git push origin v1.0.0
 
 ## 완료 정의
 
-- **로컬 완료(계정 없이 도달 가능)**: Phase 0 ok + Phase 1 ok (localhost:5173에 컴포넌트 렌더).
+- **로컬 완료(계정·스테이지 없이, `PARTNERS_TOKEN`만 있으면 도달)**: Phase 0 ok + Phase 1 ok (localhost:5173에 컴포넌트 렌더).
 - **배포 완료(관문 통과 필요)**: G2~G4 해소 + 배포 접속 시 커스텀 화면 정상 표시 + 자가진단 표에 걸린 항목 없음.
 
 대상 스테이지가 아직 없으면 **로컬 완료까지가 이번 온보딩의 성공 지점**이고, Phase 2는 관문 목록을 사용자에게 남기고 멈추는 것이 올바른 종료다.
