@@ -94,10 +94,10 @@ SDK 패키지(`@partners-bmf/*`)는 npmjs가 아니라 **GitHub Packages(`https:
 cat > .npmrc <<'NPMRC'
 @partners-bmf:registry=https://npm.pkg.github.com
 //npm.pkg.github.com/:_authToken=${PARTNERS_TOKEN}
-//npm.pkg.github.com/:always-auth=true
 NPMRC
 ```
 - `${PARTNERS_TOKEN}`은 npm이 실행 시 환경변수에서 읽는다. **토큰 원문을 `.npmrc`에 직접 쓰지 말 것.**
+- (예전 예시에 있던 `always-auth=true`는 최신 npm에서 `Unknown project config` 경고를 낸다 — 넣지 않는다. 스코프 `_authToken` 한 줄로 인증은 충분하다.)
 - 어드민 계보(`@frontend-bmf`)까지 쓸 거면 같은 방식으로 `@frontend-bmf:registry=...` 한 줄을 추가. SDK_FULL 유저 템플릿만이면 위 세 줄로 충분.
 - **검증(재개 지점)**: `npm view @partners-bmf/bstage-cli version`
   - 버전이 출력되면 통과 → 바로 "프로젝트 생성"으로 이어간다.
@@ -107,42 +107,58 @@ NPMRC
   - 재개 신호를 받으면 이 `npm view`를 **다시 실행**해서 통과할 때까지 이 체크포인트를 반복한다(종료하지 않는다).
 
 ### 실행 — 프로젝트 생성
-```bash
-npx @partners-bmf/bstage-cli@latest init --yes --space <space>
-# <space>: 프로젝트 식별자. 대상 스테이지가 정해지지 않았으면 임시로 demo 사용
-```
-- 인터랙티브로 물으면(비TTY 실패 시) `--yes --space <space>`로 비대화형 실행. API 키는 **"없어도 시작"** 을 선택(나중 connect 단계에서 설정).
-- 완료되면 새 폴더에 의존성 설치·git 초기화·보일러플레이트가 생성된다.
-  > ⚠️ **폴더명을 넘겨짚지 말 것.** SDK 문서 버전에 따라 `bstage-<space>-templates/` 또는 `<space>-custom-templates-<phase>/`로 다르다. init 출력에 찍힌 실제 폴더명을 확인하거나 `ls -d */`로 새로 생긴 디렉터리를 찾아 그리로 `cd` 한다.
 
-### 실행 — 템플릿 작성 (SDK_FULL 풀페이지)
-`src/templates/<name>/template.tsx` 를 만든다. **파일명은 반드시 `template.tsx`**.
+**네이밍 규칙 먼저(어기면 init이 바로 중단된다 — 추측 금지):**
+- `--space`: 영문자로 시작, 영문·숫자·하이픈만. (예: `demo`)
+- `--template`: **Custom Element 이름 규칙 — 소문자 시작 + 하이픈 최소 1개 + 소문자·숫자·하이픈만.** (예: `demo-hello`)
+  - ⚠️ `hello`처럼 **하이픈 없는 값을 주면 `■ --template 값은 Custom Element 스펙...`으로 중단된다.** 반드시 하이픈을 넣어라(관례: `<space>-hello`).
+  - `--template`을 **생략하면 기본값 `<space>-hello`** 가 자동으로 쓰이고 이건 항상 유효하다.
+
+```bash
+# 안전한 완전 지정형 (권장): 값이 모두 규칙을 만족
+npx @partners-bmf/bstage-cli@latest init --yes --space demo --template demo-hello --target user --phase dev --pm npm
+```
+- `--yes`는 비대화형(에이전트/비TTY 환경 필수). API 키는 안 물어보고 없이 시작(나중 connect 단계에서 설정).
+- 기본값: `--target user` `--phase dev` `--pm npm`(생략 가능). `--space`만 필수.
+- 완료되면 프로젝트 폴더 **`<space>-custom-templates-<phase>`** (위 예시면 `demo-custom-templates-dev`)가 생기고, 그 안에 의존성 설치·git 초기화·보일러플레이트 + **첫 템플릿 `src/templates/<template>/template.tsx` 가 자동 생성**된다.
+  > 폴더명이 다르게 보이면 init 출력에 찍힌 이름을 쓰거나 `ls -d */`로 새로 생긴 디렉터리를 찾아 그리로 `cd` 한다.
+
+### (선택) 템플릿 수정·추가
+init이 **첫 템플릿 `src/templates/<template>/template.tsx` 를 이미 생성**했다. happy path에선 손으로 만들 필요 없다. 내용만 고치면 된다.
+새 템플릿을 **추가**할 때만 폴더를 만든다 — **폴더명 = 템플릿명은 Custom Element 규칙(소문자·하이픈 최소 1개, 예 `demo-profile`)**, 파일명은 반드시 `template.tsx`:
 ```tsx
 import { createTemplate } from '@partners-bmf/bstage-react'
 
-export default function DemoTemplate() {
+export default function ProfileTemplate() {
   return <div style={{ padding: 24 }}><h1>Hello, b.stage!</h1></div>
 }
 
-createTemplate(DemoTemplate, {
-  space: '<space>',
-  name: '<name>',
-  // target 미지정 → 기본 'user'(유저 화면), slot 미지정 → 풀페이지(SDK_FULL)
+createTemplate(ProfileTemplate, {
+  space: 'demo',
+  name: 'demo-profile',   // 폴더명과 일치, 하이픈 규칙 준수
+  // target 미지정 → 기본 'user', slot 미지정 → 풀페이지(SDK_FULL)
 })
 ```
 
 ### 검증 — 로컬 성공 신호
 ```bash
-cd <init이 생성한 폴더>   # 위에서 확인한 실제 폴더명
+cd demo-custom-templates-dev   # = <space>-custom-templates-<phase> (init이 만든 실제 폴더명)
 npm run dev
 ```
-- `http://localhost:5173` → 템플릿 목록, `http://localhost:5173/<name>` → 컴포넌트 렌더 확인.
-- 여기까지 뜨면 **Phase 1 `status: ok`** (b.stage 계정 없이 도달하는 첫 성공 지점).
+- `http://localhost:5173` → 템플릿 목록, `http://localhost:5173/<template>` (예: `/demo-hello`) → 컴포넌트 렌더 확인.
+- 여기까지 뜨면 **Phase 1 `status: ok`** (b.stage 계정 없이 도달하는 첫 성공 지점) → 다음(Phase 2)로 이어가되, 대상 스테이지가 없으면 거기 관문들은 CHECKPOINT로 안내.
 
-### Phase 1 자가진단 (렌더가 안 되거나 빌드가 깨질 때 먼저 확인)
+### Phase 1 자가진단
+**init이 중단될 때 (증상 → 원인):**
+- `■ --template 값은 Custom Element 스펙...` → `--template`(또는 템플릿명)에 **하이픈이 없다.** `hello`❌ → `demo-hello`✅. 아예 생략하면 기본 `<space>-hello`로 통과.
+- `--space 값은 영문자로 시작...` → space가 규칙 위반(영문 시작·영숫자·하이픈만).
+- `PARTNERS_TOKEN 환경변수가 설정되지 않았습니다` → G1로.
+- `403 ... does not match expected scopes` → 토큰 scope/SSO 문제(레지스트리 검증 CHECKPOINT).
+
+**렌더가 안 되거나 빌드가 깨질 때:**
 - [ ] `createTemplate()` 이 **모듈 최상위**에서 호출되는가 (함수 내부 호출 금지 — 빌드 시 메타데이터 추출 실패)
 - [ ] 컴포넌트를 **`export default`** 로 내보냈는가
-- [ ] 파일 경로가 정확히 `src/templates/<name>/template.tsx` 인가
+- [ ] 파일 경로가 정확히 `src/templates/<template>/template.tsx` 인가 (`<template>`은 하이픈 포함 이름)
 - [ ] CSS는 `?inline` 로 import해서 `<style>` 로 주입했는가 (Shadow DOM이라 외부 CSS 미적용)
 - [ ] `.npmrc`·`PARTNERS_TOKEN` 설정이 맞는가 (설치 401/403이면 G1 재확인)
 

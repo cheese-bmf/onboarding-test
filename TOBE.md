@@ -21,6 +21,8 @@ runbook의 자가진단 표로 지금은 우회하지만, 원래는 제품이 �
 - **업로드 ≠ 릴리즈**: 업로드 성공 체크마크와 실제 라우팅 적용(릴리즈)이 별개 단계인데 안내가 없다 → "성공했는데 화면 안 바뀜". TO-BE: 한 단계로 합치거나 릴리즈 미적용을 명시 경고.
 - **재배포 버튼 비활성 + 미노출 저장 미반영 버그**: 노출 중이면 재배포가 막히고, 미노출로 내리는 우회조차 저장이 반영 안 되는 버그가 있음. TO-BE: 무중단 재배포 + 버그 티켓화.
 - **manifest 경로 불일치로 업로드 실패**: SDK 매핑 경로와 `manifest.json` 실제 디렉토리명이 어긋나면 빌드 실패. TO-BE: 빌드가 경로 불일치를 사전 검증.
+- **문서 ↔ CLI 드리프트 (템플릿 네이밍)**: SDK 문서(GETTING_STARTED)는 템플릿명 예시로 `hello`(하이픈 없음)를 쓰는데, CLI 0.45.0은 `--template`을 Custom Element 규칙(`/^[a-z][a-z0-9-]*-[a-z0-9-]*$/`, 하이픈 필수)으로 강제해 `hello`가 중단됨. 폴더명도 문서가 `bstage-<space>-templates` vs 실제 `<space>-custom-templates-<phase>`로 어긋남. TO-BE: 문서를 CLI 검증 규칙에 맞춰 갱신(단일 정본), 또는 CLI가 하이픈 없는 입력을 `<space>-<입력>`으로 자동 보정 + 명확한 에러 예시.
+- **`.npmrc` `always-auth` 경고**: 예전 예시의 `always-auth=true`가 최신 npm에서 `Unknown project config` 경고. TO-BE: 생성/문서 `.npmrc`에서 제거(스코프 `_authToken`으로 충분).
 
 ## 벤치마크에서 가져올 설계 원칙(요약)
 
