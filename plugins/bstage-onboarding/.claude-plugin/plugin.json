@@ -1,7 +1,7 @@
 {
   "name": "bstage-onboarding",
   "description": "b.stage SDK_FULL 커스텀 페이지 온보딩 runbook을 AI 에이전트가 따라 수행하게 하는 스킬. 정본 지시서(ONBOARDING.md)를 읽어 실행하는 얇은 라우터.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": {
     "name": "cheese-bmf"
   },

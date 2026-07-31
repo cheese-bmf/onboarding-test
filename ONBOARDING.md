@@ -118,6 +118,10 @@ NPMRC
 # 안전한 완전 지정형 (권장): 값이 모두 규칙을 만족
 npx @partners-bmf/bstage-cli@latest init --yes --space demo --template demo-hello --target user --phase dev --pm npm
 ```
+- **재개/부분 실패 처리:** 이 명령을 재실행하기 전에 `demo-custom-templates-dev`가 이미 있는지 확인한다. 있으면 init을 다시 실행하지 말고, init 출력에 표시된 실제 프로젝트 디렉터리로 들어가 생성 결과를 점검한 뒤 아래 검증 단계부터 재개한다. CLI는 기존 디렉터리가 있으면 중단하므로, 폴더가 있다는 이유만으로 삭제하거나 덮어쓰지 않는다.
+  - 최소 점검: `package.json`과 `src/templates/<template>/template.tsx`가 있는지 확인한다.
+  - 둘 다 있으면 `npm run dev` 검증으로 이어간다.
+  - 하나라도 없거나 init이 원문 오류와 함께 중단됐다면 그 오류와 디렉터리 상태를 보고하고 CHECKPOINT에서 대기한다. 사용자가 정리·복구한 뒤 “완료했어”라고 하면 같은 점검을 다시 실행한다.
 - `--yes`는 비대화형(에이전트/비TTY 환경 필수). API 키는 안 물어보고 없이 시작(나중 connect 단계에서 설정).
 - 기본값: `--target user` `--phase dev` `--pm npm`(생략 가능). `--space`만 필수.
 - 완료되면 프로젝트 폴더 **`<space>-custom-templates-<phase>`** (위 예시면 `demo-custom-templates-dev`)가 생기고, 그 안에 의존성 설치·git 초기화·보일러플레이트 + **첫 템플릿 `src/templates/<template>/template.tsx` 가 자동 생성**된다.
