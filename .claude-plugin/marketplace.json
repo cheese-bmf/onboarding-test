@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "bstage-plugins",
+  "description": "b.stage 커스텀 페이지(SDK_FULL) 온보딩 플러그인 마켓플레이스",
+  "owner": {
+    "name": "cheese-bmf"
+  },
+  "plugins": [
+    {
+      "name": "bstage-onboarding",
+      "description": "b.stage SDK_FULL 커스텀 페이지 온보딩 runbook을 AI 에이전트가 감지→검증→실행→재검증으로 따라 수행하게 하는 스킬",
+      "version": "0.1.0",
+      "source": "./plugins/bstage-onboarding",
+      "keywords": ["bstage", "onboarding", "sdk", "custom-page"]
+    }
+  ]
+}
